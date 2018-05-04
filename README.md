@@ -15,3 +15,16 @@ The platformer game and UI is created using the following library projects:
 * [Platypus](https://github.com/britzl/platypus) - Platformer logic
 * [Defold-Orthographic](https://github.com/britzl/defold-orthographic) - Camera tools (for following the player)
 * [Defold-Timer](https://github.com/britzl/defold-timer) - Timer for repeating tasks
+
+## How to run the example
+Bundle the game to an application, either desktop or mobile. Launch the application on two devices (or two instances of the application on a single desktop computer). When the application is launched a mode selection menu is shown:
+
+![](menu.png)
+
+Select `Game` from the menu to start the platformer game on one device. This device will act as the host and start broadcasting P2P messages for clients to discover.
+
+![](game.png)
+
+Select `Controls` on the second device to show control buttons to control the game. This device will act as the client and start to listen for a broadcasting host.
+
+![](controls.png)
