@@ -1,0 +1,107 @@
+local platypus = require "platypus.platypus"
+local remotecontrol = require "remote.control"
+
+local ACTION_LEFT = hash("left")
+local ACTION_RIGHT = hash("right")
+local ACTION_JUMP = hash("jump")
+
+local MSG_LEFT = hash("left")
+local MSG_RIGHT = hash("right")
+local MSG_JUMP = hash("jump")
+local MSG_ABORT_JUMP = hash("abort_jump")
+
+local function play_animation(self, animation)
+	if self.current_animation ~= animation then
+		msg.post("#sprite", "play_animation", { id = animation })
+		self.current_animation = animation
+	end
+end
+
+local function left(self)
+	self.platformer.left(200)
+	play_animation(self, hash("walk"))
+	sprite.set_hflip("#sprite", true)
+end
+
+local function right(self)
+	self.platformer.right(200)
+	play_animation(self, hash("walk"))
+	sprite.set_hflip("#sprite", false)
+end
+
+local function jump(self)
+	self.platformer.jump(800)
+end
+
+local function abort_jump(self)
+	self.platformer.abort_jump()
+end
+
+function init(self)
+	self.platformer = platypus.create({
+		gravity = -1100,
+		collisions = {
+			ground = { hash("ground") },
+			left = 33,
+			right = 33,
+			top = 46,
+			bottom = 46,
+		},
+	})
+	msg.post(".", "acquire_input_focus")
+	
+	remotecontrol.server(function(message, from_ip, from_port)
+		print("received action", message.action)
+		if message.action == "jump" then
+			jump(self)
+		elseif message.action == "duck" then
+			print("duck")
+		elseif message.action == "left" then
+			self.move_left = true
+		elseif message.action == "right" then
+			self.move_right = true
+		elseif message.action == "stop" then
+			self.move_left = false
+			self.move_right = false
+		end
+	end)
+end
+
+function update(self, dt)
+	if self.move_left then
+		left(self)
+	elseif self.move_right then
+		right(self)
+	else
+		play_animation(self, hash("idle"))		
+	end
+
+	self.platformer.update(dt)
+	remotecontrol.update(dt)
+end
+
+function on_message(self, message_id, message, sender)
+	self.platformer.on_message(message_id, message, sender)
+end
+
+function on_input(self, action_id, action)
+	if action_id == ACTION_LEFT then
+		if action.pressed then
+			self.move_left = true
+		elseif action.released then
+			self.move_left = false
+		end
+	elseif action_id == ACTION_RIGHT then
+		if action.pressed then
+			self.move_right = true
+		elseif action.released then
+			self.move_right = false
+		end
+	elseif action_id == ACTION_JUMP then
+		if action.pressed then
+			jump(self)
+		elseif action.released then
+			abort_jump(self)
+		end
+	end
+end
